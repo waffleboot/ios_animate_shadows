@@ -52,31 +52,36 @@
     [self performSelector:@selector(animate) withObject:nil afterDelay:1];
 }
 
-- (void)update:(CADisplayLink *)link {
-    [UIView performWithoutAnimation:^{
-        CGFloat x = 10;
-        CGFloat y = 10;
-        CGFloat angle = [[self.layer.presentationLayer valueForKeyPath:@"transform.rotation.z"] floatValue];
-        CGAffineTransform transform = CGAffineTransformMakeRotation(-angle);
+- (void)animate {
+    
+    CGFloat x = 10;
+    CGFloat y = 10;
+    NSMutableArray *values = [NSMutableArray array];
+    NSMutableArray *times = [NSMutableArray array];
+    for (int i = 0; i < 36; ++i) {
+        CGFloat f = i/36.;
+        CGAffineTransform transform = CGAffineTransformMakeRotation(-2.*M_PI*f);
         CGFloat newx = x*transform.a+y*transform.c;
         CGFloat newy = x*transform.b+y*transform.d;
         CGSize size = CGSizeMake(newx, newy);
-        self.layer.shadowOffset = size;
-    }];
-}
+        [values addObject:[NSValue valueWithCGSize:size]];
+        [times addObject:@(f)];
+    }
 
-- (void)animate {
+    CAKeyframeAnimation *shadowOffsetAnimation = [CAKeyframeAnimation animationWithKeyPath:@"shadowOffset"];
+    shadowOffsetAnimation.values = values;
+    shadowOffsetAnimation.keyTimes = times;
     
-    CADisplayLink *link = [CADisplayLink displayLinkWithTarget:self selector:@selector(update:)];
-    [link addToRunLoop:NSRunLoop.mainRunLoop forMode:NSDefaultRunLoopMode];
+    CABasicAnimation *rotation = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
+    rotation.fromValue = @0.f;
+    rotation.toValue = @(2*M_PI);
     
-    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
-    animation.fromValue = @0.f;
-    animation.toValue = @(2*M_PI);
-    animation.repeatCount = HUGE_VALF;
-    animation.duration = 8;
+    CAAnimationGroup *group = [CAAnimationGroup animation];
+    group.duration = 8;
+    group.repeatCount = HUGE_VALF;
+    group.animations = @[rotation,shadowOffsetAnimation];
     
-    [self.layer addAnimation:animation forKey:@"rotate"];
+    [self.layer addAnimation:group forKey:@"rotate"];
 }
 
 @end
